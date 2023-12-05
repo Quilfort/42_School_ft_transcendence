@@ -1,0 +1,20 @@
+# ./client/Dockerfile
+FROM node:18 as build
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm clean-install 
+
+ARG PUBLIC_INTRA_API_UID
+ARG PUBLIC_INTRA_REDIRECT_URL
+ARG PUBLIC_BACKEND_URL
+
+RUN npm run check
+
+RUN npm run build
+
+EXPOSE 5173
+
+ENTRYPOINT ["npm", "run", "preview", "--", "--host"]

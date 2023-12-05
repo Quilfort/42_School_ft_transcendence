@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    container_name: database
+    image: postgres:14
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=trans
+      - POSTGRES_PASSWORD=trans
+      - POSTGRES_DB=trans
+    networks:
+      transcendence_net:
+    expose:
+      - 5432
+
+  server:
+    build:
+      context: ./server/
+      args:
+      - DATABASE_URL=${DATABASE_URL}
+      - INTRA_REDIRECT_URL=${INTRA_REDIRECT_URL}
+      - INTRA_API_UID=${INTRA_API_UID}
+      - INTRA_API_SECRET=${INTRA_API_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_DURATION=${JWT_DURATION}
+    container_name: server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      transcendence_net:
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - INTRA_REDIRECT_URL=${INTRA_REDIRECT_URL}
+      - INTRA_API_UID=${INTRA_API_UID}
+      - INTRA_API_SECRET=${INTRA_API_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_DURATION=${JWT_DURATION}
+    depends_on:
+      - postgres_db
+
+  client:
+    build: 
+      context: ./client/
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+        - PUBLIC_INTRA_API_UID=${INTRA_API_UID}
+        - PUBLIC_INTRA_REDIRECT_URL=${INTRA_REDIRECT_URL}
+        - PUBLIC_BACKEND_URL=${BACKEND_URL}
+    container_name: client
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+      - "5173:4173"
+    networks:
+      transcendence_net:
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PUBLIC_INTRA_API_UID=${INTRA_API_UID}
+      - PUBLIC_INTRA_REDIRECT_URL=${INTRA_REDIRECT_URL}
+      - PUBLIC_BACKEND_URL=${BACKEND_URL}
+    depends_on:
+      - server
+
+networks:
+  transcendence_net:
+
+volumes:
+  postgres_data:

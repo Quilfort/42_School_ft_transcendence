@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  	provider = "prisma-client-js"
+	output = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+	id    		Int     	@default(autoincrement()) @id
+	intra_id	Int			@unique
+	experience	Int			@default(0)
+	tfa_token	TfaToken?
+	intra_name	String		@unique
+	name  		String		@unique
+	avatar		String		@default("uploads/default.png")
+	created_at	DateTime	@default(now())
+
+	friends		User[]		@relation("friends")
+	friends_str	User[]		@relation("friends")	// required extra relation, not used
+	blocked		User[]		@relation("blocked")
+	blocked_str	User[]		@relation("blocked")	// required extra relation, not used
+
+	channels	ChannelMembership[]
+	messages	Message[]
+	games		Game[]
+
+	wins		Int			@default(0)
+	losses		Int			@default(0)
+}
+
+model TfaToken {
+	id    		Int     	@default(autoincrement()) @id
+	tfa_token	String
+	user		User		@relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+	user_id		Int			@unique
+}
+
+model Channel {
+	id			Int			@default(autoincrement()) @id
+	name		String
+	password	String?
+	created_at	DateTime	@default(now())
+
+	messages	Message[]
+	users		ChannelMembership[]
+}
+
+model ChannelMembership {
+	@@id([user_id, channel_id])
+
+	role		Role	@default(MEMBER)
+
+	user        User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+	user_id		Int
+	channel     Channel @relation(fields: [channel_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+	channel_id	Int
+}
+
+model Message {
+	id			Int			@default(autoincrement()) @id
+	created_at	DateTime	@default(now())
+
+	content		String
+
+	sender		User		@relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+	sender_id	Int
+	channel		Channel		@relation(fields: [channel_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+	channel_id	Int
+}
+
+model Game {
+	id			Int			@default(autoincrement()) @id
+	players		User[]
+	score		Int[]
+	created_at	DateTime	@default(now())
+	finished_at	DateTime?
+
+	winner_id	Int?
+	loser_id	Int?
+}
+
+enum Role {
+	OWNER
+	ADMINISTRATOR
+	MEMBER
+	MUTED
+	INVITED
+	BANNED
+}
+
+enum GameStatus {
+	WAITING
+	IN_PROGRESS
+	FINISHED
+}
+
+enum ChannelType {
+	PUBLIC
+	PRIVATE
+	DM
+}

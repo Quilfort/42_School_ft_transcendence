@@ -1,0 +1,27 @@
+# ./server/Dockerfile
+FROM node:18
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    postgresql-client \
+    netcat-traditional
+
+ARG DATABASE_URL
+ARG INTRA_REDIRECT_URL
+ARG INTRA_API_UID
+ARG INTRA_API_SECRET
+ARG JWT_SECRET
+ARG JWT_DURATION
+
+COPY . .
+
+RUN npm clean-install
+
+RUN cd src/ && npx prisma generate
+
+RUN npm run build
+
+EXPOSE 3000
+
+ENTRYPOINT ["sh", "entrypoint.sh"]
